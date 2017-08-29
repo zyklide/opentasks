@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.android.contentpal.testing;
 
-import android.content.Context;
-
-import org.dmfs.tasks.provider.R;
+import org.dmfs.optional.Optional;
 
 
 /**
- * Access for the authority name of the tasks content provider.
+ * Represents a check/matcher/condition/verification that can be checked against a target object of type <code>T</code>.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public interface Check<T>
 {
-    private static String sCachedValue;
-
-
-    public static String taskAuthority(Context context)
-    {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
-    }
+    /**
+     * Verifies if the condition represented by this {@link Check} is met for the given target.
+     *
+     * @param target
+     *         the object to check
+     *
+     * @return absent if the target verifies successfully, a present fail message describing the mismatch otherwise
+     */
+    Optional<String> verify(T target);
 }

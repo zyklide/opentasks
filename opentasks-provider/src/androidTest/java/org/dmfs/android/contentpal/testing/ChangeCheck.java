@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
-
-import android.content.Context;
-
-import org.dmfs.tasks.provider.R;
-
+package org.dmfs.android.contentpal.testing;
 
 /**
- * Access for the authority name of the tasks content provider.
+ * Represents a check/matcher/verification/condition pair for checking things before and after an operation.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public interface ChangeCheck<T>
 {
-    private static String sCachedValue;
+    /**
+     * The check to use before the operation.
+     */
+    Check<T> beforeCheck();
 
-
-    public static String taskAuthority(Context context)
-    {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
-    }
+    /**
+     * The check to use after the operation.
+     */
+    Check<T> afterCheck();
 }

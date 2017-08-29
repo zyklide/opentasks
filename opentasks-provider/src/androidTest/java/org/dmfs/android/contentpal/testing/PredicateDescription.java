@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.android.contentpal.testing;
 
-import android.content.Context;
+import android.text.TextUtils;
 
-import org.dmfs.tasks.provider.R;
+import org.dmfs.android.contentpal.Predicate;
+import org.dmfs.jems.DelegatingCharSequence;
 
 
 /**
- * Access for the authority name of the tasks content provider.
- *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public final class PredicateDescription extends DelegatingCharSequence
 {
-    private static String sCachedValue;
-
-
-    public static String taskAuthority(Context context)
+    public PredicateDescription(Predicate predicate)
     {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
+        // TODO Do it lazily when appropriate classes are available from jems library
+        super(String.format("[Predicate] selection: %s | args: %s", predicate.selection(), TextUtils.join(";", predicate.arguments())));
     }
 }

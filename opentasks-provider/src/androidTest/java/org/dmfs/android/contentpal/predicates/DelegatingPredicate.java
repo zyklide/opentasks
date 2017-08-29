@@ -14,30 +14,39 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.android.contentpal.predicates;
 
-import android.content.Context;
+import android.support.annotation.NonNull;
 
-import org.dmfs.tasks.provider.R;
+import org.dmfs.android.contentpal.Predicate;
 
 
 /**
- * Access for the authority name of the tasks content provider.
- *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public abstract class DelegatingPredicate implements Predicate
 {
-    private static String sCachedValue;
+    private final Predicate mDelegate;
 
 
-    public static String taskAuthority(Context context)
+    public DelegatingPredicate(Predicate predicate)
     {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
+        mDelegate = predicate;
+    }
+
+
+    @NonNull
+    @Override
+    public final CharSequence selection()
+    {
+        return mDelegate.selection();
+    }
+
+
+    @NonNull
+    @Override
+    public final Iterable<String> arguments()
+    {
+        return mDelegate.arguments();
     }
 }

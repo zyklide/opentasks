@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
-
-import android.content.Context;
-
-import org.dmfs.tasks.provider.R;
-
+package org.dmfs.jems;
 
 /**
- * Access for the authority name of the tasks content provider.
- *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public final class IterableSize implements OnDemand<Long>
 {
-    private static String sCachedValue;
+    private final Iterable<?> mIterable;
 
 
-    public static String taskAuthority(Context context)
+    public IterableSize(Iterable<?> iterable)
     {
-        if (sCachedValue == null)
+        mIterable = iterable;
+    }
+
+
+    @Override
+    public Long get()
+    {
+        long result = 0;
+        for (Object element : mIterable)
         {
-            sCachedValue = context.getString(R.string.opentasks_authority);
+            result++;
         }
-        return sCachedValue;
+        return result;
     }
 }

@@ -14,30 +14,29 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.provider.tasks.opentaskspal.tasklists;
 
-import android.content.Context;
+import android.content.ContentProviderOperation;
+import android.support.annotation.NonNull;
 
-import org.dmfs.tasks.provider.R;
+import org.dmfs.tasks.contract.TaskContract;
 
 
-/**
- * Access for the authority name of the tasks content provider.
- *
- * @author Gabor Keszthelyi
- */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public final class Named implements TaskListRowData
 {
-    private static String sCachedValue;
+    private final CharSequence mName;
 
 
-    public static String taskAuthority(Context context)
+    public Named(@NonNull CharSequence name)
     {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
+        mName = name;
+    }
+
+
+    @NonNull
+    @Override
+    public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
+    {
+        return builder.withValue(TaskContract.TaskLists.LIST_NAME, mName.toString());
     }
 }

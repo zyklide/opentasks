@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.android.contentpal.testing;
 
-import android.content.Context;
-
-import org.dmfs.tasks.provider.R;
+import org.dmfs.optional.Absent;
+import org.dmfs.optional.Optional;
 
 
 /**
- * Access for the authority name of the tasks content provider.
- *
  * @author Gabor Keszthelyi
  */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public final class NoOpCheck<T> implements Check<T>
 {
-    private static String sCachedValue;
-
-
-    public static String taskAuthority(Context context)
+    @Override
+    public Optional<String> verify(T target)
     {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
+        return Absent.absent();
     }
 }

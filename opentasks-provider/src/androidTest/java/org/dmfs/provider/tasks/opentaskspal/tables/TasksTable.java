@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks;
+package org.dmfs.provider.tasks.opentaskspal.tables;
 
-import android.content.Context;
+import android.support.annotation.NonNull;
 
-import org.dmfs.tasks.provider.R;
+import org.dmfs.android.contentpal.tables.AbstractDelegatedTable;
+import org.dmfs.android.contentpal.tables.BaseTable;
+import org.dmfs.tasks.contract.TaskContract;
 
 
-/**
- * Access for the authority name of the tasks content provider.
- *
- * @author Gabor Keszthelyi
- */
-// TODO Figure out better design or at least rename to TaskAuthority.get(context)
-public final class AuthorityUtil
+public final class TasksTable extends AbstractDelegatedTable<TaskContract.Tasks>
 {
-    private static String sCachedValue;
-
-
-    public static String taskAuthority(Context context)
+    public TasksTable(@NonNull String authority)
     {
-        if (sCachedValue == null)
-        {
-            sCachedValue = context.getString(R.string.opentasks_authority);
-        }
-        return sCachedValue;
+        super(new BaseTable<TaskContract.Tasks>(TaskContract.Tasks.getContentUri(authority)));
     }
 }

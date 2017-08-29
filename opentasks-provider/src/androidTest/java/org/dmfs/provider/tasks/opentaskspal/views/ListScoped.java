@@ -1,0 +1,60 @@
+/*
+ * Copyright 2017 dmfs GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.dmfs.provider.tasks.opentaskspal.views;
+
+import android.database.Cursor;
+import android.os.RemoteException;
+import android.support.annotation.NonNull;
+
+import org.dmfs.android.contentpal.Predicate;
+import org.dmfs.android.contentpal.RowSnapshot;
+import org.dmfs.android.contentpal.Table;
+import org.dmfs.android.contentpal.UriParams;
+import org.dmfs.android.contentpal.View;
+import org.dmfs.optional.Optional;
+import org.dmfs.provider.tasks.opentaskspal.predicates.ListIdEq;
+import org.dmfs.tasks.contract.TaskContract;
+
+
+public final class ListScoped implements View<TaskContract.Tasks>
+{
+    private final View<TaskContract.Tasks> mDelegate;
+    private final RowSnapshot<TaskContract.TaskLists> mTaskListRow;
+
+
+    public ListScoped(@NonNull RowSnapshot<TaskContract.TaskLists> taskListRow, @NonNull View<TaskContract.Tasks> delegate)
+    {
+        mDelegate = delegate;
+        mTaskListRow = taskListRow;
+    }
+
+
+    @NonNull
+    @Override
+    public Cursor rows(@NonNull UriParams uriParams, @NonNull Predicate predicate, @NonNull Optional<String> sorting) throws RemoteException
+    {
+        return mDelegate.rows(uriParams, new ListIdEq(predicate, mTaskListRow), sorting);
+    }
+
+
+    @NonNull
+    @Override
+    public Table<TaskContract.Tasks> table()
+    {
+        return new org.dmfs.provider.tasks.opentaskspal.tables.ListScoped(mTaskListRow, mDelegate.table());
+    }
+}
