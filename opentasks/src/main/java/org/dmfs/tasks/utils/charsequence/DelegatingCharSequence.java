@@ -14,53 +14,51 @@
  * limitations under the License.
  */
 
-package org.dmfs.tasks.utils;
+package org.dmfs.tasks.utils.charsequence;
+
+import android.support.annotation.NonNull;
+
 
 /**
- * Base class for {@link CharSequence}s that use a {@link String} delegate value.
+ * Base class for {@link CharSequence}s that delegate to another {@link CharSequence} potentially composed in their constructor.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Remove this class when the Factory, Lazy, AbstractCachingCharSequence line is available in java tools library
-public abstract class AbstractStringCharSequence implements CharSequence
+public abstract class DelegatingCharSequence implements CharSequence
 {
-    private final String mValue;
+    private final CharSequence mDelegate;
 
 
-    public AbstractStringCharSequence(String value)
+    public DelegatingCharSequence(@NonNull CharSequence delegate)
     {
-        if (value == null)
-        {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        mValue = value;
+        mDelegate = delegate;
     }
 
 
     @Override
     public final int length()
     {
-        return mValue.length();
+        return mDelegate.length();
     }
 
 
     @Override
     public final char charAt(int index)
     {
-        return mValue.charAt(index);
+        return mDelegate.charAt(index);
     }
 
 
     @Override
     public final CharSequence subSequence(int start, int end)
     {
-        return mValue.subSequence(start, end);
+        return mDelegate.subSequence(start, end);
     }
 
 
     @Override
     public final String toString()
     {
-        return mValue;
+        return mDelegate.toString();
     }
 }

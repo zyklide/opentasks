@@ -19,7 +19,7 @@ package org.dmfs.tasks.share;
 
 import org.dmfs.tasks.model.ContentSet;
 import org.dmfs.tasks.model.TaskFieldAdapters;
-import org.dmfs.tasks.utils.AbstractStringCharSequence;
+import org.dmfs.tasks.utils.charsequence.DelegatingCharSequence;
 
 
 /**
@@ -27,7 +27,7 @@ import org.dmfs.tasks.utils.AbstractStringCharSequence;
  *
  * @author Gabor Keszthelyi
  */
-public final class TitleText extends AbstractStringCharSequence implements CharSequence
+public final class TitleText extends DelegatingCharSequence
 {
     public TitleText(ContentSet contentSet)
     {

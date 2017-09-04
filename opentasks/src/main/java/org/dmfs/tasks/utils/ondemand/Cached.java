@@ -14,18 +14,33 @@
  * limitations under the License.
  */
 
-package org.dmfs.tasks.utils.factory;
+package org.dmfs.tasks.utils.ondemand;
 
 /**
- * General factory interface.
+ * An {@link OnDemand} that caches an {@link OnDemand}'s {@link OnDemand#get()} value.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Use it from dmfs java tools library when available
-public interface Factory<T>
+public final class Cached<T> implements OnDemand<T>
 {
-    /**
-     * Create the object.
-     */
-    T create();
+    private final OnDemand<T> mDelegate;
+
+    private T mCachedValue;
+
+
+    public Cached(OnDemand<T> delegate)
+    {
+        mDelegate = delegate;
+    }
+
+
+    @Override
+    public T get()
+    {
+        if (mCachedValue == null)
+        {
+            mCachedValue = mDelegate.get();
+        }
+        return mCachedValue;
+    }
 }

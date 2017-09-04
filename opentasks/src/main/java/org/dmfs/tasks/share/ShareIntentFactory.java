@@ -46,13 +46,13 @@ public final class ShareIntentFactory implements TaskIntentFactory
     @Override
     public Intent create(ContentSet contentSet, Model model, Context context)
     {
-        String title = new TitleText(contentSet).toString();
-        String body = new ShareTaskText(contentSet, model, context).toString();
+        CharSequence title = new TitleText(contentSet);
+        CharSequence body = new ShareTaskText(contentSet, model, context);
 
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_SUBJECT, title);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, body);
+        sendIntent.putExtra(Intent.EXTRA_SUBJECT, title.toString());
+        sendIntent.putExtra(Intent.EXTRA_TEXT, body.toString());
         sendIntent.setType("text/plain");
 
         return sendIntent;

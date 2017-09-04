@@ -24,8 +24,8 @@ import org.dmfs.android.carrot.locaters.RawResourceLocator;
 import org.dmfs.tasks.R;
 import org.dmfs.tasks.model.ContentSet;
 import org.dmfs.tasks.model.Model;
-import org.dmfs.tasks.utils.charsequence.AbstractCharSequence;
-import org.dmfs.tasks.utils.factory.Factory;
+import org.dmfs.tasks.utils.charsequence.CachingCharSequence;
+import org.dmfs.tasks.utils.ondemand.OnDemand;
 
 import au.com.codeka.carrot.CarrotEngine;
 import au.com.codeka.carrot.CarrotException;
@@ -60,49 +60,33 @@ import au.com.codeka.carrot.bindings.SingletonBindings;
  *
  * @author Gabor Keszthelyi
  */
-public final class ShareTaskText extends AbstractCharSequence
+public final class ShareTaskText extends CachingCharSequence
 {
     public ShareTaskText(final ContentSet contentSet, final Model model, final Context context)
     {
-        super(new OutputFactory(contentSet, model, context));
+        super(new OnDemand<CharSequence>()
+        {
+            @Override
+            public CharSequence get()
+            {
+                CarrotEngine engine = new CarrotEngine(new Configuration.Builder().setResourceLocator(new RawResourceLocator.Builder(context)).build());
+                try
+                {
+                    String output = engine.process(String.valueOf(R.raw.sharetask),
+                            new Composite(
+                                    new AndroidBindings(context),
+                                    new SingletonBindings("$task", new TaskBindings(contentSet, model)),
+                                    new SingletonBindings("tformat", new TimeFormatter(context, contentSet))));
+
+                    Log.v("ShareTaskText", output);
+                    return output;
+                }
+                catch (CarrotException e)
+                {
+                    throw new RuntimeException("Failed to process template with carrot", e);
+                }
+            }
+        });
     }
 
-
-    private static final class OutputFactory implements Factory<CharSequence>
-    {
-        private final ContentSet mContentSet;
-        private final Model mModel;
-        private final Context mContext;
-
-
-        public OutputFactory(ContentSet contentSet, Model model, Context context)
-        {
-            mContentSet = contentSet;
-            mModel = model;
-            mContext = context;
-        }
-
-
-        @Override
-        public CharSequence create()
-        {
-            CarrotEngine engine = new CarrotEngine(new Configuration.Builder().setResourceLocator(new RawResourceLocator.Builder(mContext)).build());
-            try
-            {
-                String output = engine.process(String.valueOf(R.raw.sharetask),
-                        new Composite(
-                                new AndroidBindings(mContext),
-                                new SingletonBindings("$task", new TaskBindings(mContentSet, mModel)),
-                                new SingletonBindings("tformat", new TimeFormatter(mContext, mContentSet))));
-
-                Log.v("ShareTaskText", output);
-                return output;
-            }
-            catch (CarrotException e)
-            {
-                throw new RuntimeException("Failed to process template with carrot", e);
-            }
-        }
-
-    }
 }

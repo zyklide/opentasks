@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package org.dmfs.tasks.utils.factory;
+package org.dmfs.tasks.utils.ondemand;
 
 /**
- * Simple, non-thread safe implementation of {@link Lazy}.
+ * Interface that can be used to provide a declared access to an object of type <code>T</code>.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Use it from dmfs java tools library when available
-public final class SimpleLazy<T> extends AbstractLazy<T>
+public interface OnDemand<T>
 {
-    public SimpleLazy(Factory<T> factory)
-    {
-        super(factory);
-    }
-
+    /**
+     * Returns the actual object.
+     */
+    T get();
 }

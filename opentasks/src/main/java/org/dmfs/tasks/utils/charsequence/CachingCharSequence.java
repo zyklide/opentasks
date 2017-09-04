@@ -18,25 +18,23 @@ package org.dmfs.tasks.utils.charsequence;
 
 import android.support.annotation.NonNull;
 
-import org.dmfs.tasks.utils.factory.Factory;
-import org.dmfs.tasks.utils.factory.SimpleLazy;
+import org.dmfs.tasks.utils.ondemand.Cached;
+import org.dmfs.tasks.utils.ondemand.OnDemand;
 
 
 /**
- * An abstract {@link CharSequence} that uses the provided factory to create the value which will be cached.
+ * An abstract {@link CharSequence} that uses the provided {@link OnDemand} to create the value lazily which will be cached.
  *
  * @author Gabor Keszthelyi
  */
-// TODO Use it from dmfs java tools library when available
-public abstract class AbstractCharSequence implements CharSequence
+public abstract class CachingCharSequence implements CharSequence
 {
+    private final OnDemand<CharSequence> mDelegate;
 
-    private final SimpleLazy<CharSequence> mDelegate;
 
-
-    public AbstractCharSequence(Factory<CharSequence> charSequenceFactory)
+    public CachingCharSequence(OnDemand<CharSequence> onDemandCharSequence)
     {
-        mDelegate = new SimpleLazy<>(charSequenceFactory);
+        mDelegate = new Cached<>(onDemandCharSequence);
     }
 
 
