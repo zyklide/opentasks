@@ -60,7 +60,7 @@ import au.com.codeka.carrot.bindings.SingletonBindings;
  *
  * @author Gabor Keszthelyi
  */
-public class ShareTaskText extends AbstractCharSequence
+public final class ShareTaskText extends AbstractCharSequence
 {
     public ShareTaskText(final ContentSet contentSet, final Model model, final Context context)
     {
@@ -92,7 +92,7 @@ public class ShareTaskText extends AbstractCharSequence
                 String output = engine.process(String.valueOf(R.raw.sharetask),
                         new Composite(
                                 new AndroidBindings(mContext),
-                                new TaskBindings(mContentSet, mModel),
+                                new SingletonBindings("$task", new TaskBindings(mContentSet, mModel)),
                                 new SingletonBindings("tformat", new TimeFormatter(mContext, mContentSet))));
 
                 Log.v("ShareTaskText", output);

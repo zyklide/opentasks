@@ -27,7 +27,7 @@ import org.dmfs.tasks.utils.AbstractStringCharSequence;
  *
  * @author Gabor Keszthelyi
  */
-public class TitleText extends AbstractStringCharSequence implements CharSequence
+public final class TitleText extends AbstractStringCharSequence implements CharSequence
 {
     public TitleText(ContentSet contentSet)
     {
