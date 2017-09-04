@@ -27,12 +27,12 @@ import org.dmfs.tasks.utils.ondemand.OnDemand;
  *
  * @author Gabor Keszthelyi
  */
-public abstract class CachingCharSequence implements CharSequence
+public abstract class LazyCharSequence implements CharSequence
 {
     private final OnDemand<CharSequence> mDelegate;
 
 
-    public CachingCharSequence(OnDemand<CharSequence> onDemandCharSequence)
+    public LazyCharSequence(OnDemand<CharSequence> onDemandCharSequence)
     {
         mDelegate = new Cached<>(onDemandCharSequence);
     }

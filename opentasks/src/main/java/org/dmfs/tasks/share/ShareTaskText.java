@@ -24,7 +24,7 @@ import org.dmfs.android.carrot.locaters.RawResourceLocator;
 import org.dmfs.tasks.R;
 import org.dmfs.tasks.model.ContentSet;
 import org.dmfs.tasks.model.Model;
-import org.dmfs.tasks.utils.charsequence.CachingCharSequence;
+import org.dmfs.tasks.utils.charsequence.LazyCharSequence;
 import org.dmfs.tasks.utils.ondemand.OnDemand;
 
 import au.com.codeka.carrot.CarrotEngine;
@@ -38,6 +38,7 @@ import au.com.codeka.carrot.bindings.SingletonBindings;
  ============
 
  <task description>
+
  [X] checked list item
  [ ] unchecked list item
 
@@ -60,7 +61,7 @@ import au.com.codeka.carrot.bindings.SingletonBindings;
  *
  * @author Gabor Keszthelyi
  */
-public final class ShareTaskText extends CachingCharSequence
+public final class ShareTaskText extends LazyCharSequence
 {
     public ShareTaskText(final ContentSet contentSet, final Model model, final Context context)
     {
