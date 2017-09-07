@@ -43,6 +43,7 @@ import org.dmfs.android.contentpal.testing.RowExistsAfter;
 import org.dmfs.android.contentpal.testing.RowInserted;
 import org.dmfs.android.contentpal.testing.SingletonRow;
 import org.dmfs.opentaskspal.predicates.ListIdEq;
+import org.dmfs.opentaskspal.tables.InstanceTable;
 import org.dmfs.opentaskspal.tables.ListScoped;
 import org.dmfs.opentaskspal.tables.TaskListsTable;
 import org.dmfs.opentaskspal.tables.TasksTable;
@@ -204,22 +205,19 @@ public class TaskProviderTest
                                 new ListIdEq(new SingletonRow<>(mClient, new TaskListsTable(mAuthority), TaskLists.LIST_NAME, "list2"))
                         )),
 
-                new RowExistsAfter(
-                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                new RowExistsAfter(new InstanceTable(mAuthority),
                         new IdEq<>(
                                 TaskContract.InstanceColumns.TASK_ID,
                                 new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task1"),
                                 Tasks._ID)),
 
-                new RowExistsAfter(
-                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                new RowExistsAfter(new InstanceTable(mAuthority),
                         new IdEq<>(
                                 TaskContract.InstanceColumns.TASK_ID,
                                 new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task2"),
                                 Tasks._ID)),
 
-                new RowExistsAfter(
-                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                new RowExistsAfter(new InstanceTable(mAuthority),
                         new IdEq<>(
                                 TaskContract.InstanceColumns.TASK_ID,
                                 new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task3"),
