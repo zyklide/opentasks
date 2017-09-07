@@ -51,6 +51,7 @@ import org.dmfs.opentaskspal.tables.TaskListsTable;
 import org.dmfs.opentaskspal.tables.TasksTable;
 import org.dmfs.opentaskspal.tasklists.NameData;
 import org.dmfs.opentaskspal.tasks.DueData;
+import org.dmfs.opentaskspal.tasks.DurationData;
 import org.dmfs.opentaskspal.tasks.StartData;
 import org.dmfs.opentaskspal.tasks.TimeZoneData;
 import org.dmfs.opentaskspal.tasks.TitleData;
@@ -260,8 +261,6 @@ public class TaskProviderTest
                                 new EqArg(Tasks.DTSTART, start),
                                 new EqArg(Tasks.DUE, due),
                                 new EqArg(Tasks.TZ, timeZone.getID())
-                                // TODO This is not added, should it be?
-                                // new EqArg(Tasks.DURATION, due - start)
                         )
                 ),
 
@@ -269,7 +268,8 @@ public class TaskProviderTest
                         new AllOf(
                                 new EqArg(Instances.INSTANCE_START, start),
                                 new EqArg(Instances.INSTANCE_DUE, due),
-                                new EqArg(Instances.INSTANCE_DURATION, due - start)
+                                new EqArg(Instances.INSTANCE_DURATION, due - start),
+                                new EqArg(Tasks.TZ, timeZone.getID())
                         )
                 )
         ));
@@ -277,32 +277,46 @@ public class TaskProviderTest
 
 
     @Test
-    public void testInstanceWithDuration()
+    public void testInsertWithStartAndDuration()
     {
-        long listId = createTaskList();
+        Table<TaskLists> taskListsTable = createTaskListsTable();
+        RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
+        RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
 
-        long dtstart = System.currentTimeMillis() / 1000 * 1000;
+        long start = System.currentTimeMillis();
         String durationStr = "PT1H";
-        long duration = Duration.parse(durationStr).toMillis();
-        createTaskWithTime(listId, dtstart, "PT1H");
+        long durationMillis = Duration.parse(durationStr).toMillis();
+        TimeZone timeZone = TimeZone.getDefault();
 
-        String[] projection = { Instances.INSTANCE_START, Instances.INSTANCE_DUE, Instances.INSTANCE_DURATION };
-        Cursor cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
-        try
-        {
-            // there can be only one
-            Assert.assertEquals(1, cursor.getCount());
+        OperationsBatch batch = new MultiBatch(
+                new Put<>(taskList, new EmptyRowData<TaskLists>()),
+                new Put<>(task,
+                        new Composite<>(
+                                new StartData(start),
+                                new DurationData(durationStr),
+                                new TimeZoneData(timeZone)
+                        ))
+        );
 
-            // Compare timestamps
-            cursor.moveToNext();
-            Assert.assertEquals(dtstart, cursor.getLong(0));
-            Assert.assertEquals(duration, cursor.getLong(2));
-            Assert.assertEquals((dtstart + duration), cursor.getLong(1));
-        }
-        finally
-        {
-            cursor.close();
-        }
+        assertThat(batch, resultsIn(mClient,
+
+                new RowInserted(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.DTSTART, start),
+                                new EqArg(Tasks.DURATION, durationStr),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                ),
+
+                new RowInserted(new InstanceTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Instances.INSTANCE_START, start),
+                                new EqArg(Instances.INSTANCE_DUE, start + durationMillis),
+                                new EqArg(Instances.INSTANCE_DURATION, durationMillis),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                )
+        ));
     }
 
 
