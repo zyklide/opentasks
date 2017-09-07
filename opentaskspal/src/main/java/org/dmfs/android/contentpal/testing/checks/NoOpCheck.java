@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.testing;
+package org.dmfs.android.contentpal.testing.checks;
 
-import android.text.TextUtils;
-
-import org.dmfs.android.contentpal.Predicate;
-import org.dmfs.jems.DelegatingCharSequence;
+import org.dmfs.android.contentpal.testing.Check;
+import org.dmfs.optional.Absent;
+import org.dmfs.optional.Optional;
 
 
 /**
  * @author Gabor Keszthelyi
  */
-public final class PredicateDescription extends DelegatingCharSequence
+public final class NoOpCheck<T> implements Check<T>
 {
-    public PredicateDescription(Predicate predicate)
+    @Override
+    public Optional<String> verify(T target)
     {
-        // TODO Do it lazily when appropriate classes are available from jems library
-        super(String.format("[Predicate] selection: \"%s\" args: \"%s\"", predicate.selection(), TextUtils.join(";", predicate.arguments())));
+        return Absent.absent();
     }
 }

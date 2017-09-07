@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.testing;
+package org.dmfs.android.contentpal.testing.checks;
 
 import android.content.ContentProviderClient;
 
 import org.dmfs.android.contentpal.Predicate;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.rowsets.QueryRowSet;
+import org.dmfs.android.contentpal.testing.Check;
+import org.dmfs.android.contentpal.testing.utils.PredicateDescription;
 import org.dmfs.jems.IterableSize;
 import org.dmfs.optional.Absent;
 import org.dmfs.optional.Optional;

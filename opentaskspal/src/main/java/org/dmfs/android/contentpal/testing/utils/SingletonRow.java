@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.testing;
+package org.dmfs.android.contentpal.testing.utils;
 
 import android.content.ContentProviderClient;
 
@@ -33,6 +33,7 @@ import java.io.IOException;
 /**
  * @author Gabor Keszthelyi
  */
+// TODO Review this idea and the name
 public final class SingletonRow<T> extends LazyRowSnapshot<T>
 {
 

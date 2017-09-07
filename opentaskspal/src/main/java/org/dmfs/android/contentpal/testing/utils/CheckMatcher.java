@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.testing;
+package org.dmfs.android.contentpal.testing.utils;
 
+import org.dmfs.android.contentpal.testing.Check;
 import org.dmfs.optional.Optional;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

@@ -14,32 +14,35 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.testing;
+package org.dmfs.android.contentpal.testing.changechecks;
 
 import android.content.ContentProviderClient;
 
 import org.dmfs.android.contentpal.Predicate;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.predicates.EqArg;
+import org.dmfs.android.contentpal.testing.ChangeCheck;
+import org.dmfs.android.contentpal.testing.Check;
+import org.dmfs.android.contentpal.testing.checks.RowCountCheck;
 
 
 /**
  * @author Gabor Keszthelyi
  */
-public class RowExistsAfter implements ChangeCheck<ContentProviderClient>
+public class RowInserted implements ChangeCheck<ContentProviderClient>
 {
     private final Table<?> mTable;
     private final Predicate mPredicate;
 
 
-    public RowExistsAfter(Table<?> table, Predicate predicate)
+    public RowInserted(Table<?> table, Predicate predicate)
     {
         mTable = table;
         mPredicate = predicate;
     }
 
 
-    public RowExistsAfter(Table<?> table, String columnName, String value)
+    public RowInserted(Table<?> table, String columnName, String value)
     {
         this(table, new EqArg(columnName, value));
     }
@@ -48,7 +51,7 @@ public class RowExistsAfter implements ChangeCheck<ContentProviderClient>
     @Override
     public Check<ContentProviderClient> beforeCheck()
     {
-        return new NoOpCheck<>();
+        return new RowCountCheck(mTable, mPredicate, 0);
     }
 
 

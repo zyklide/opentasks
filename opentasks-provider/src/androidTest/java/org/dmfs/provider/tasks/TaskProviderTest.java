@@ -28,22 +28,26 @@ import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
 import org.dmfs.android.contentpal.OperationsBatch;
+import org.dmfs.android.contentpal.OperationsQueue;
 import org.dmfs.android.contentpal.RowSnapshot;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.batches.MultiBatch;
+import org.dmfs.android.contentpal.batches.SingletonBatch;
 import org.dmfs.android.contentpal.operations.Put;
 import org.dmfs.android.contentpal.predicates.AllOf;
 import org.dmfs.android.contentpal.predicates.EqArg;
 import org.dmfs.android.contentpal.predicates.IdEq;
+import org.dmfs.android.contentpal.queues.BasicOperationsQueue;
 import org.dmfs.android.contentpal.rowdata.Composite;
 import org.dmfs.android.contentpal.rowdata.EmptyRowData;
 import org.dmfs.android.contentpal.rowsnapshots.VirtualRowSnapshot;
 import org.dmfs.android.contentpal.tables.AccountScoped;
 import org.dmfs.android.contentpal.tables.BaseTable;
 import org.dmfs.android.contentpal.tables.Synced;
-import org.dmfs.android.contentpal.testing.RowExistsAfter;
-import org.dmfs.android.contentpal.testing.RowInserted;
-import org.dmfs.android.contentpal.testing.SingletonRow;
+import org.dmfs.android.contentpal.testing.changechecks.RowExistsAfter;
+import org.dmfs.android.contentpal.testing.changechecks.RowInserted;
+import org.dmfs.android.contentpal.testing.changechecks.RowUpdated;
+import org.dmfs.android.contentpal.testing.utils.SingletonRow;
 import org.dmfs.opentaskspal.predicates.ListIdEq;
 import org.dmfs.opentaskspal.tables.InstanceTable;
 import org.dmfs.opentaskspal.tables.ListScoped;
@@ -71,7 +75,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import static org.dmfs.android.contentpal.testing.ContentChangeCheck.resultsIn;
+import static org.dmfs.android.contentpal.testing.checks.ContentChangeCheck.resultsIn;
 import static org.junit.Assert.assertThat;
 
 
@@ -324,36 +328,80 @@ public class TaskProviderTest
      * Having a table with a single task. Update task and check if instance updates accordingly.
      */
     @Test
-    public void testInstanceUpdate()
+    public void testUpdateDue()
     {
-        long listId = createTaskList();
+        Table<TaskLists> taskListsTable = createTaskListsTable();
+        RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
+        RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
+        OperationsQueue operationsQueue = new BasicOperationsQueue(mClient);
 
-        createTaskWithTime(listId, System.currentTimeMillis(), System.currentTimeMillis() + 100); // Task-table with a single task
+        long start = System.currentTimeMillis();
+        long due = start + TimeUnit.HOURS.toMillis(1);
+        TimeZone timeZone = TimeZone.getDefault();
 
-        assertRowCount(Tasks.getContentUri(mAuthority), 1);
+        OperationsBatch batch = new MultiBatch(
+                new Put<>(taskList, new EmptyRowData<TaskLists>()),
+                new Put<>(task,
+                        new Composite<>(
+                                new StartData(start),
+                                new DueData(due),
+                                new TimeZoneData(timeZone)
+                        ))
+        );
 
-        // Update task with new DUE
-        ContentValues values = new ContentValues();
-        Long newDue = System.currentTimeMillis();
-        values.put(Tasks.DUE, newDue);
-        values.put(Tasks.TZ, TimeZone.getDefault().getID());
-        mResolver.update(Tasks.getContentUri(mAuthority), values, null, null);
+        assertThat(batch, resultsIn(mClient, operationsQueue,
 
-        assertRowCount(Tasks.getContentUri(mAuthority), 1);
+                new RowInserted(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.DTSTART, start),
+                                new EqArg(Tasks.DUE, due),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                ),
 
-        // Check instance
-        String[] projection = { Instances.DUE };
-        Cursor cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
-        try
-        {
-            Assert.assertEquals(1, cursor.getCount());
-            cursor.moveToNext();
-            Assert.assertEquals((Long) newDue, (Long) cursor.getLong(0));
-        }
-        finally
-        {
-            cursor.close();
-        }
+                new RowInserted(new InstanceTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Instances.INSTANCE_START, start),
+                                new EqArg(Instances.INSTANCE_DUE, due),
+                                new EqArg(Instances.INSTANCE_DURATION, due - start),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                )
+        ));
+
+        long due2 = due + TimeUnit.HOURS.toMillis(1);
+
+        OperationsBatch batch2 = new SingletonBatch(new Put<>(task, new DueData(due2)));
+
+        assertThat(batch2, resultsIn(mClient, operationsQueue,
+
+                new RowUpdated(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.DTSTART, start),
+                                new EqArg(Tasks.DUE, due),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        ),
+                        new AllOf(
+                                new EqArg(Tasks.DTSTART, start),
+                                new EqArg(Tasks.DUE, due2),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                ),
+
+                new RowUpdated(new InstanceTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Instances.INSTANCE_START, start),
+                                new EqArg(Instances.INSTANCE_DUE, due),
+                                new EqArg(Instances.INSTANCE_DURATION, due - start),
+                                new EqArg(Tasks.TZ, timeZone.getID())),
+                        new AllOf(
+                                new EqArg(Instances.INSTANCE_START, start),
+                                new EqArg(Instances.INSTANCE_DUE, due2),
+                                new EqArg(Instances.INSTANCE_DURATION, due2 - start),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                        )
+                )
+        ));
     }
 
 
