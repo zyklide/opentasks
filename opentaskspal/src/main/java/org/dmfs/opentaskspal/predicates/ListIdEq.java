@@ -33,4 +33,10 @@ public final class ListIdEq extends DelegatingPredicate
     {
         super(new AllOf(predicate, new IdEq<>(TaskContract.Tasks.LIST_ID, taskListRow, TaskContract.TaskLists._ID)));
     }
+
+
+    public ListIdEq(RowSnapshot<TaskContract.TaskLists> taskListRow)
+    {
+        super(new IdEq<>(TaskContract.Tasks.LIST_ID, taskListRow, TaskContract.TaskLists._ID));
+    }
 }

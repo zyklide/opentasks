@@ -36,8 +36,6 @@ public final class ContentChangeCheck implements Check<OperationsBatch>
     private final ContentProviderClient mClient;
     private final ChangeCheck<ContentProviderClient>[] mChecks;
 
-    private Optional<String> mFailMsg = new Absent<>();
-
 
     public ContentChangeCheck(ContentProviderClient client, ChangeCheck... checks)
     {
@@ -89,8 +87,6 @@ public final class ContentChangeCheck implements Check<OperationsBatch>
                 return new Present<>("After check failed with: " + failMsg.value());
             }
         }
-
-        mClient.release();
 
         return Absent.absent();
     }

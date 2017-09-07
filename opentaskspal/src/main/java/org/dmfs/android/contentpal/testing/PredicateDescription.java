@@ -30,6 +30,6 @@ public final class PredicateDescription extends DelegatingCharSequence
     public PredicateDescription(Predicate predicate)
     {
         // TODO Do it lazily when appropriate classes are available from jems library
-        super(String.format("[Predicate] selection: %s | args: %s", predicate.selection(), TextUtils.join(";", predicate.arguments())));
+        super(String.format("[Predicate] selection: \"%s\" args: \"%s\"", predicate.selection(), TextUtils.join(";", predicate.arguments())));
     }
 }

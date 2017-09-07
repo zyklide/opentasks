@@ -48,14 +48,14 @@ public final class SingletonRow<T> extends LazyRowSnapshot<T>
                 if (!rowSetIterator.hasNext())
                 {
                     throw new RuntimeException(
-                            String.format("No matching row found in table %s for predicate %s", table, new PredicateDescription(predicate)));
+                            String.format("No matching row found in table %s for %s", table, new PredicateDescription(predicate)));
                 }
 
                 RowSnapshot<T> rowSnapshot = rowSetIterator.next();
                 if (rowSetIterator.hasNext())
                 {
                     throw new RuntimeException(
-                            String.format("More than one row found in table %s for predicate %s", table, new PredicateDescription(predicate)));
+                            String.format("More than one row found in table %s for %s", table, new PredicateDescription(predicate)));
                 }
 
                 try

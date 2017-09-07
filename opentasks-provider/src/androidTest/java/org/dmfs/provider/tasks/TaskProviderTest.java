@@ -42,6 +42,7 @@ import org.dmfs.android.contentpal.tables.Synced;
 import org.dmfs.android.contentpal.testing.RowExistsAfter;
 import org.dmfs.android.contentpal.testing.RowInserted;
 import org.dmfs.android.contentpal.testing.SingletonRow;
+import org.dmfs.opentaskspal.predicates.ListIdEq;
 import org.dmfs.opentaskspal.tables.ListScoped;
 import org.dmfs.opentaskspal.tables.TaskListsTable;
 import org.dmfs.opentaskspal.tables.TasksTable;
@@ -59,9 +60,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.TimeZone;
 
 import static org.dmfs.android.contentpal.testing.ContentChangeCheck.resultsIn;
@@ -83,6 +82,7 @@ public class TaskProviderTest
     private ContentResolver mResolver;
     private String mAuthority;
     private Context mContext;
+    private ContentProviderClient mClient;
 
 
     @Before
@@ -91,6 +91,7 @@ public class TaskProviderTest
         mContext = InstrumentationRegistry.getTargetContext();
         mResolver = mContext.getContentResolver();
         mAuthority = AuthorityUtil.taskAuthority(mContext);
+        mClient = mContext.getContentResolver().acquireContentProviderClient(mAuthority);
     }
 
 
@@ -104,17 +105,18 @@ public class TaskProviderTest
         */
 
         // Delete the entries from Tasks and TaskLists tables:
+        // TODO Reveiw this createSyncQuery usage here, do we have better support for this now in taskspal?
         mResolver.delete(createSyncQuery(Tasks.getContentUri(mAuthority).buildUpon(), true), null, null);
         mResolver.delete(createSyncQuery(TaskLists.getContentUri(mAuthority).buildUpon(), true), null, null);
+
+        mClient.release();
     }
 
 
     @Test
     public void testSingleInsert() throws Exception
     {
-        ContentProviderClient client = mContext.getContentResolver().acquireContentProviderClient(mAuthority);
-
-        Table<TaskLists> taskListsTable = new Synced<>(new AccountScoped<>(new Account(ACC_NAME, ACC_TYPE), new TaskListsTable(mAuthority)));
+        Table<TaskLists> taskListsTable = createTaskListsTable();
         RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
         RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
 
@@ -123,7 +125,7 @@ public class TaskProviderTest
                 new Put<>(task, new Titled("task title 1"))
         );
 
-        assertThat(batch, resultsIn(client,
+        assertThat(batch, resultsIn(mClient,
 
                 new RowInserted(new TaskListsTable(mAuthority),
                         new AllOf(
@@ -138,7 +140,7 @@ public class TaskProviderTest
                         new BaseTable<>(Instances.getContentUri(mAuthority)),
                         new IdEq<>(
                                 TaskContract.InstanceColumns.TASK_ID,
-                                new SingletonRow<>(client, new TasksTable(mAuthority), Tasks.TITLE, "task title 1"),
+                                new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task title 1"),
                                 Tasks._ID))
         ));
     }
@@ -150,84 +152,79 @@ public class TaskProviderTest
     @Test
     public void testMultipleInserts()
     {
-        List<Long> listIds = createTaskLists(3);
+        Table<TaskLists> taskListsTable = createTaskListsTable();
+        RowSnapshot<TaskLists> taskList1 = new VirtualRowSnapshot<>(taskListsTable);
+        RowSnapshot<TaskLists> taskList2 = new VirtualRowSnapshot<>(taskListsTable);
+        RowSnapshot<Tasks> task1 = new VirtualRowSnapshot<>(new ListScoped(taskList1, new TasksTable(mAuthority)));
+        RowSnapshot<Tasks> task2 = new VirtualRowSnapshot<>(new ListScoped(taskList1, new TasksTable(mAuthority)));
+        RowSnapshot<Tasks> task3 = new VirtualRowSnapshot<>(new ListScoped(taskList2, new TasksTable(mAuthority)));
 
-        // Add two tasks with list id 1
-        ContentValues values = new ContentValues();
+        OperationsBatch batch = new MultiBatch(
+                new Put<>(taskList1, new Named("list1")),
+                new Put<>(taskList2, new Named("list2")),
+                new Put<>(task1, new Titled("task1")),
+                new Put<>(task2, new Titled("task2")),
+                new Put<>(task3, new Titled("task3"))
+        );
 
-        values.put(Tasks.LIST_ID, listIds.get(0));
-        values.put(Tasks.TITLE, "A Task");
-        mResolver.insert(Tasks.getContentUri(mAuthority), values);
+        assertThat(batch, resultsIn(mClient,
 
-        values.clear();
-        values.put(Tasks.LIST_ID, listIds.get(0));
-        values.put(Tasks.TITLE, "A second Task");
-        mResolver.insert(Tasks.getContentUri(mAuthority), values);
+                new RowInserted(new TaskListsTable(mAuthority),
+                        new AllOf(
+                                new EqArg(TaskLists.LIST_NAME, "list1"),
+                                new EqArg(TaskLists.ACCOUNT_NAME, ACC_NAME),
+                                new EqArg(TaskLists.ACCOUNT_TYPE, ACC_TYPE)
+                        )),
 
-        // Add a tasklist
-        values.clear();
-        // TODO What is this?:
-        mResolver.insert(createSyncQuery(TaskLists.getContentUri(mAuthority).buildUpon(), true), values);
+                new RowInserted(new TaskListsTable(mAuthority),
+                        new AllOf(
+                                new EqArg(TaskLists.LIST_NAME, "list2"),
+                                new EqArg(TaskLists.ACCOUNT_NAME, ACC_NAME),
+                                new EqArg(TaskLists.ACCOUNT_TYPE, ACC_TYPE)
+                        )),
 
-        // Add another task which refers to list #2
-        values.clear();
+                new RowExistsAfter(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.TITLE, "task1"),
+                                new EqArg(Tasks.LIST_NAME, "list1"),
+                                new ListIdEq(new SingletonRow<>(mClient, new TaskListsTable(mAuthority), TaskLists.LIST_NAME, "list1"))
+                        )),
 
-        values.put(Tasks.LIST_ID, listIds.get(1));
-        values.put(Tasks.TITLE, "A third Task");
-        mResolver.insert(Tasks.getContentUri(mAuthority), values);
+                new RowExistsAfter(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.TITLE, "task2"),
+                                new EqArg(Tasks.LIST_NAME, "list1"),
+                                new ListIdEq(new SingletonRow<>(mClient, new TaskListsTable(mAuthority), TaskLists.LIST_NAME, "list1"))
+                        )),
 
-        // Check if Tasks contains three entries
-        String[] projection = { Tasks._ID };
-        Cursor cursor = mResolver.query(Tasks.getContentUri(mAuthority), projection, null, null, null);
-        Assert.assertEquals(3, cursor.getCount());
+                new RowExistsAfter(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.TITLE, "task3"),
+                                new EqArg(Tasks.LIST_NAME, "list2"),
+                                new ListIdEq(new SingletonRow<>(mClient, new TaskListsTable(mAuthority), TaskLists.LIST_NAME, "list2"))
+                        )),
 
-        Set<String> ids = new HashSet<String>(); // save ids for later check
-        while (cursor.moveToNext())
-        {
-            ids.add(cursor.getString(0));
-        }
+                new RowExistsAfter(
+                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                        new IdEq<>(
+                                TaskContract.InstanceColumns.TASK_ID,
+                                new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task1"),
+                                Tasks._ID)),
 
-        // Check if instances also contains three entries (including the correct task_ids)
-        projection = new String[] { Instances.TASK_ID };
-        cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
-        Assert.assertEquals(3, cursor.getCount());
-        String taskId;
+                new RowExistsAfter(
+                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                        new IdEq<>(
+                                TaskContract.InstanceColumns.TASK_ID,
+                                new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task2"),
+                                Tasks._ID)),
 
-        while (cursor.moveToNext())
-        { // if task_id matches => remove (ids has to be empty afterwards
-            taskId = cursor.getString(0);
-            if (ids.contains(taskId))
-            {
-                ids.remove(taskId);
-            }
-        }
-        Assert.assertEquals(0, ids.size());
-        cursor.close();
-    }
-
-
-    @Test
-    public void testDelete()
-    {
-        // TODO Should not depend on the other test:
-        testMultipleInserts(); // quick way to create a test database
-        Cursor cursor = mResolver.query(Tasks.getContentUri(mAuthority), null, null, null, null);
-        Assert.assertEquals(3, cursor.getCount());
-
-        // Try to delete the task with the title "A second task"
-        Uri syncUri = createSyncQuery(Tasks.getContentUri(mAuthority).buildUpon(), true);
-        String where = Tasks.TITLE + "=?";
-        String[] selectionArgs = { "A second Task" };
-        mResolver.delete(syncUri, where, selectionArgs);
-
-        String[] projection = { Tasks.TITLE };
-        cursor = mResolver.query(Tasks.getContentUri(mAuthority), projection, null, null, null);
-        Assert.assertEquals(2, cursor.getCount());
-        while (cursor.moveToNext())
-        {
-            Assert.assertTrue(cursor.getString(0).compareTo("A second Task") != 0);
-        }
-        cursor.close();
+                new RowExistsAfter(
+                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                        new IdEq<>(
+                                TaskContract.InstanceColumns.TASK_ID,
+                                new SingletonRow<>(mClient, new TasksTable(mAuthority), Tasks.TITLE, "task3"),
+                                Tasks._ID))
+        ));
     }
 
 
@@ -370,6 +367,12 @@ public class TaskProviderTest
         ContentValues values = new ContentValues();
         values.put(Tasks.LIST_ID, 5);
         mResolver.insert(Tasks.getContentUri(mAuthority), values);
+    }
+
+
+    private Synced<TaskLists> createTaskListsTable()
+    {
+        return new Synced<>(new AccountScoped<>(new Account(ACC_NAME, ACC_TYPE), new TaskListsTable(mAuthority)));
     }
 
 
