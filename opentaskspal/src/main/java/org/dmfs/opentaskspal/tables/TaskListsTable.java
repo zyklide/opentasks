@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.tables;
+package org.dmfs.opentaskspal.tables;
 
 import org.dmfs.android.contentpal.tables.AbstractDelegatedTable;
 import org.dmfs.android.contentpal.tables.BaseTable;

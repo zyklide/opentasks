@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.tables;
+package org.dmfs.opentaskspal.predicates;
 
-import android.support.annotation.NonNull;
-
-import org.dmfs.android.contentpal.tables.AbstractDelegatedTable;
-import org.dmfs.android.contentpal.tables.BaseTable;
+import org.dmfs.android.contentpal.Predicate;
+import org.dmfs.android.contentpal.RowSnapshot;
+import org.dmfs.android.contentpal.predicates.AllOf;
+import org.dmfs.android.contentpal.predicates.DelegatingPredicate;
+import org.dmfs.android.contentpal.predicates.IdEq;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-public final class TasksTable extends AbstractDelegatedTable<TaskContract.Tasks>
+/**
+ * @author Gabor Keszthelyi
+ */
+public final class ListIdEq extends DelegatingPredicate
 {
-    public TasksTable(@NonNull String authority)
+    public ListIdEq(Predicate predicate, RowSnapshot<TaskContract.TaskLists> taskListRow)
     {
-        super(new BaseTable<TaskContract.Tasks>(TaskContract.Tasks.getContentUri(authority)));
+        super(new AllOf(predicate, new IdEq<>(TaskContract.Tasks.LIST_ID, taskListRow, TaskContract.TaskLists._ID)));
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.operations;
+package org.dmfs.opentaskspal.operations;
 
 import android.content.ContentProviderOperation;
 import android.support.annotation.NonNull;

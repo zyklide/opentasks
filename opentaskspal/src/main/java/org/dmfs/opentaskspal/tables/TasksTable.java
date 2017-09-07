@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.tasks;
+package org.dmfs.opentaskspal.tables;
 
-import android.content.ContentProviderOperation;
 import android.support.annotation.NonNull;
 
-import org.dmfs.android.contentpal.RowData;
+import org.dmfs.android.contentpal.tables.AbstractDelegatedTable;
+import org.dmfs.android.contentpal.tables.BaseTable;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-public final class Titled implements RowData<TaskContract.Tasks>
+public final class TasksTable extends AbstractDelegatedTable<TaskContract.Tasks>
 {
-    private final CharSequence mTitle;
-
-
-    public Titled(@NonNull CharSequence title)
+    public TasksTable(@NonNull String authority)
     {
-        mTitle = title;
-    }
-
-
-    @NonNull
-    @Override
-    public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
-    {
-        return builder.withValue(TaskContract.Tasks.TITLE, mTitle.toString());
+        super(new BaseTable<TaskContract.Tasks>(TaskContract.Tasks.getContentUri(authority)));
     }
 }

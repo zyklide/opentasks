@@ -28,6 +28,9 @@ dependencies {
     compile('org.dmfs:lib-recur:0.9.6')
     compile project(':opentasks-contract')
 
+    // TODO Review
+
+    androidTestCompile project(':opentaskspal')
     androidTestCompile 'com.android.support:support-annotations:' + SUPPORT_LIBRARY_VERSION
     androidTestCompile 'com.android.support.test:runner:0.5'
     androidTestCompile 'com.android.support.test:rules:0.5'

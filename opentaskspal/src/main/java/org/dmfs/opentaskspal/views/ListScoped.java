@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.views;
+package org.dmfs.opentaskspal.views;
 
 import android.database.Cursor;
 import android.os.RemoteException;
@@ -25,8 +25,8 @@ import org.dmfs.android.contentpal.RowSnapshot;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.UriParams;
 import org.dmfs.android.contentpal.View;
+import org.dmfs.opentaskspal.predicates.ListIdEq;
 import org.dmfs.optional.Optional;
-import org.dmfs.provider.tasks.opentaskspal.predicates.ListIdEq;
 import org.dmfs.tasks.contract.TaskContract;
 
 
@@ -55,6 +55,6 @@ public final class ListScoped implements View<TaskContract.Tasks>
     @Override
     public Table<TaskContract.Tasks> table()
     {
-        return new org.dmfs.provider.tasks.opentaskspal.tables.ListScoped(mTaskListRow, mDelegate.table());
+        return new org.dmfs.opentaskspal.tables.ListScoped(mTaskListRow, mDelegate.table());
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.tasklists;
+package org.dmfs.opentaskspal.tasklists;
 
 import org.dmfs.android.contentpal.RowData;
 import org.dmfs.tasks.contract.TaskContract;

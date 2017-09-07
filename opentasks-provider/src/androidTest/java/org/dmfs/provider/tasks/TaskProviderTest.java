@@ -46,18 +46,20 @@ import org.dmfs.android.contentpal.tables.Synced;
 import org.dmfs.android.contentpal.testing.RowExistsAfter;
 import org.dmfs.android.contentpal.testing.RowInserted;
 import org.dmfs.android.contentpal.testing.SingletonRow;
-import org.dmfs.provider.tasks.opentaskspal.tables.ListScoped;
-import org.dmfs.provider.tasks.opentaskspal.tables.TaskListsTable;
-import org.dmfs.provider.tasks.opentaskspal.tables.TasksTable;
-import org.dmfs.provider.tasks.opentaskspal.tasklists.Named;
-import org.dmfs.provider.tasks.opentaskspal.tasks.Titled;
+import org.dmfs.opentaskspal.tables.ListScoped;
+import org.dmfs.opentaskspal.tables.TaskListsTable;
+import org.dmfs.opentaskspal.tables.TasksTable;
+import org.dmfs.opentaskspal.tasklists.Named;
+import org.dmfs.opentaskspal.tasks.Titled;
 import org.dmfs.rfc5545.Duration;
 import org.dmfs.tasks.contract.TaskContract;
 import org.dmfs.tasks.contract.TaskContract.Instances;
 import org.dmfs.tasks.contract.TaskContract.TaskLists;
 import org.dmfs.tasks.contract.TaskContract.Tasks;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsIterableWithSize;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,10 +71,6 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static org.dmfs.android.contentpal.testing.ContentChangeCheck.resultsIn;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -130,7 +128,7 @@ public class TaskProviderTest
                 new Put<>(task, new Titled("task title 1"))
         );
 
-        assertThat(batch, resultsIn(client,
+        Assert.assertThat(batch, resultsIn(client,
 
                 new RowInserted(new TaskListsTable(mAuthority),
                         new AllOf(
@@ -183,18 +181,19 @@ public class TaskProviderTest
 
         Table<Tasks> verifyTasksTable = new TasksTable(mAuthority);
         RowSnapshot<Tasks> verifyTask = new AllRows<>(verifyTasksTable.view(client)).iterator().next();
-        assertThat(verifyTask.values().charData(Tasks.TITLE).value().toString(), is("task title 1"));
+        Assert.assertThat(verifyTask.values().charData(Tasks.TITLE).value().toString(), CoreMatchers.is("task title 1"));
         Integer verifyTaskId = Integer.valueOf(verifyTask.values().charData(Tasks._ID).value().toString());
 
         Table<Instances> verifyInstanceTable = new BaseTable<>(Instances.getContentUri(mAuthority));
         RowSnapshot<Instances> verifyInstanceRow = new AllRows<>(verifyInstanceTable.view(client)).iterator().next();
-        assertThat(verifyInstanceRow.values().charData(TaskContract.InstanceColumns.TASK_ID).value().toString(), is(verifyTaskId.toString()));
+        Assert.assertThat(verifyInstanceRow.values().charData(TaskContract.InstanceColumns.TASK_ID).value().toString(),
+                CoreMatchers.is(verifyTaskId.toString()));
     }
 
 
     private <T> void assertQuery(ContentProviderClient client, Table<T> table, Predicate predicate)
     {
-        assertThat(new QueryRowSet<>(table.view(client), predicate), IsIterableWithSize.<RowSnapshot<T>>iterableWithSize(1));
+        Assert.assertThat(new QueryRowSet<>(table.view(client), predicate), IsIterableWithSize.<RowSnapshot<T>>iterableWithSize(1));
     }
 
 
@@ -233,7 +232,7 @@ public class TaskProviderTest
         // Check if Tasks contains three entries
         String[] projection = { Tasks._ID };
         Cursor cursor = mResolver.query(Tasks.getContentUri(mAuthority), projection, null, null, null);
-        assertEquals(3, cursor.getCount());
+        Assert.assertEquals(3, cursor.getCount());
 
         Set<String> ids = new HashSet<String>(); // save ids for later check
         while (cursor.moveToNext())
@@ -244,7 +243,7 @@ public class TaskProviderTest
         // Check if instances also contains three entries (including the correct task_ids)
         projection = new String[] { Instances.TASK_ID };
         cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
-        assertEquals(3, cursor.getCount());
+        Assert.assertEquals(3, cursor.getCount());
         String taskId;
 
         while (cursor.moveToNext())
@@ -255,7 +254,7 @@ public class TaskProviderTest
                 ids.remove(taskId);
             }
         }
-        assertEquals(0, ids.size());
+        Assert.assertEquals(0, ids.size());
         cursor.close();
     }
 
@@ -266,7 +265,7 @@ public class TaskProviderTest
         // TODO Should not depend on the other test:
         testMultipleInserts(); // quick way to create a test database
         Cursor cursor = mResolver.query(Tasks.getContentUri(mAuthority), null, null, null, null);
-        assertEquals(3, cursor.getCount());
+        Assert.assertEquals(3, cursor.getCount());
 
         // Try to delete the task with the title "A second task"
         Uri syncUri = createSyncQuery(Tasks.getContentUri(mAuthority).buildUpon(), true);
@@ -276,10 +275,10 @@ public class TaskProviderTest
 
         String[] projection = { Tasks.TITLE };
         cursor = mResolver.query(Tasks.getContentUri(mAuthority), projection, null, null, null);
-        assertEquals(2, cursor.getCount());
+        Assert.assertEquals(2, cursor.getCount());
         while (cursor.moveToNext())
         {
-            assertTrue(cursor.getString(0).compareTo("A second Task") != 0);
+            Assert.assertTrue(cursor.getString(0).compareTo("A second Task") != 0);
         }
         cursor.close();
     }
@@ -300,13 +299,13 @@ public class TaskProviderTest
         try
         {
             // there can be only one
-            assertEquals(1, cursor.getCount());
+            Assert.assertEquals(1, cursor.getCount());
 
             // Compare timestamps
             cursor.moveToNext();
-            assertEquals(start, cursor.getLong(0));
-            assertEquals(due, cursor.getLong(1));
-            assertEquals((due - start), cursor.getLong(2));
+            Assert.assertEquals(start, cursor.getLong(0));
+            Assert.assertEquals(due, cursor.getLong(1));
+            Assert.assertEquals((due - start), cursor.getLong(2));
         }
         finally
         {
@@ -330,13 +329,13 @@ public class TaskProviderTest
         try
         {
             // there can be only one
-            assertEquals(1, cursor.getCount());
+            Assert.assertEquals(1, cursor.getCount());
 
             // Compare timestamps
             cursor.moveToNext();
-            assertEquals(dtstart, cursor.getLong(0));
-            assertEquals(duration, cursor.getLong(2));
-            assertEquals((dtstart + duration), cursor.getLong(1));
+            Assert.assertEquals(dtstart, cursor.getLong(0));
+            Assert.assertEquals(duration, cursor.getLong(2));
+            Assert.assertEquals((dtstart + duration), cursor.getLong(1));
         }
         finally
         {
@@ -371,9 +370,9 @@ public class TaskProviderTest
         Cursor cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
         try
         {
-            assertEquals(1, cursor.getCount());
+            Assert.assertEquals(1, cursor.getCount());
             cursor.moveToNext();
-            assertEquals((Long) newDue, (Long) cursor.getLong(0));
+            Assert.assertEquals((Long) newDue, (Long) cursor.getLong(0));
         }
         finally
         {
@@ -451,14 +450,14 @@ public class TaskProviderTest
 
     private void checkExceptions(Cursor cursor, String originalSyncId, Long originalId)
     {
-        assertEquals(1, cursor.getCount());
+        Assert.assertEquals(1, cursor.getCount());
         try
         {
             cursor.moveToNext();
             String _syncId = cursor.getString(0);
             Long _id = cursor.getLong(1);
-            assertEquals(originalSyncId, _syncId);
-            assertEquals(originalId, _id);
+            Assert.assertEquals(originalSyncId, _syncId);
+            Assert.assertEquals(originalId, _id);
         }
         finally
         {
@@ -559,7 +558,7 @@ public class TaskProviderTest
         Cursor cursor = mResolver.query(uri, null, null, null, null);
         try
         {
-            assertEquals(count, cursor.getCount());
+            Assert.assertEquals(count, cursor.getCount());
         }
         finally
         {

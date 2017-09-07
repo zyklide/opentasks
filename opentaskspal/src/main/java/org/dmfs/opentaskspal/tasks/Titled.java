@@ -14,23 +14,30 @@
  * limitations under the License.
  */
 
-package org.dmfs.provider.tasks.opentaskspal.predicates;
+package org.dmfs.opentaskspal.tasks;
 
-import org.dmfs.android.contentpal.Predicate;
-import org.dmfs.android.contentpal.RowSnapshot;
-import org.dmfs.android.contentpal.predicates.AllOf;
-import org.dmfs.android.contentpal.predicates.DelegatingPredicate;
-import org.dmfs.android.contentpal.predicates.IdEq;
+import android.content.ContentProviderOperation;
+import android.support.annotation.NonNull;
+
+import org.dmfs.android.contentpal.RowData;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-/**
- * @author Gabor Keszthelyi
- */
-public final class ListIdEq extends DelegatingPredicate
+public final class Titled implements RowData<TaskContract.Tasks>
 {
-    public ListIdEq(Predicate predicate, RowSnapshot<TaskContract.TaskLists> taskListRow)
+    private final CharSequence mTitle;
+
+
+    public Titled(@NonNull CharSequence title)
     {
-        super(new AllOf(predicate, new IdEq<>(TaskContract.Tasks.LIST_ID, taskListRow, TaskContract.TaskLists._ID)));
+        mTitle = title;
+    }
+
+
+    @NonNull
+    @Override
+    public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
+    {
+        return builder.withValue(TaskContract.Tasks.TITLE, mTitle.toString());
     }
 }
