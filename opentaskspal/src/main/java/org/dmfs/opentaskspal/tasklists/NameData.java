@@ -16,10 +16,28 @@
 
 package org.dmfs.opentaskspal.tasklists;
 
+import android.content.ContentProviderOperation;
+import android.support.annotation.NonNull;
+
 import org.dmfs.android.contentpal.RowData;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-public interface TaskListRowData extends RowData<TaskContract.TaskLists>
+public final class NameData implements RowData<TaskContract.TaskLists>
 {
+    private final CharSequence mName;
+
+
+    public NameData(@NonNull CharSequence name)
+    {
+        mName = name;
+    }
+
+
+    @NonNull
+    @Override
+    public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
+    {
+        return builder.withValue(TaskContract.TaskLists.LIST_NAME, mName.toString());
+    }
 }

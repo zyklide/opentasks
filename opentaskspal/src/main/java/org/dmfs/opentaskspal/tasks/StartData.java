@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package org.dmfs.opentaskspal.tasklists;
+package org.dmfs.opentaskspal.tasks;
 
 import android.content.ContentProviderOperation;
 import android.support.annotation.NonNull;
 
+import org.dmfs.android.contentpal.RowData;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-public final class Named implements TaskListRowData
+/**
+ * @author Gabor Keszthelyi
+ */
+public final class StartData implements RowData<TaskContract.Tasks>
 {
-    private final CharSequence mName;
+    private final long mStartTime;
 
 
-    public Named(@NonNull CharSequence name)
+    public StartData(long startTime)
     {
-        mName = name;
+        mStartTime = startTime;
     }
 
 
@@ -37,6 +41,6 @@ public final class Named implements TaskListRowData
     @Override
     public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
     {
-        return builder.withValue(TaskContract.TaskLists.LIST_NAME, mName.toString());
+        return builder.withValue(TaskContract.Tasks.DTSTART, mStartTime);
     }
 }

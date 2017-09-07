@@ -35,6 +35,8 @@ import org.dmfs.android.contentpal.operations.Put;
 import org.dmfs.android.contentpal.predicates.AllOf;
 import org.dmfs.android.contentpal.predicates.EqArg;
 import org.dmfs.android.contentpal.predicates.IdEq;
+import org.dmfs.android.contentpal.rowdata.Composite;
+import org.dmfs.android.contentpal.rowdata.EmptyRowData;
 import org.dmfs.android.contentpal.rowsnapshots.VirtualRowSnapshot;
 import org.dmfs.android.contentpal.tables.AccountScoped;
 import org.dmfs.android.contentpal.tables.BaseTable;
@@ -47,8 +49,11 @@ import org.dmfs.opentaskspal.tables.InstanceTable;
 import org.dmfs.opentaskspal.tables.ListScoped;
 import org.dmfs.opentaskspal.tables.TaskListsTable;
 import org.dmfs.opentaskspal.tables.TasksTable;
-import org.dmfs.opentaskspal.tasklists.Named;
-import org.dmfs.opentaskspal.tasks.Titled;
+import org.dmfs.opentaskspal.tasklists.NameData;
+import org.dmfs.opentaskspal.tasks.DueData;
+import org.dmfs.opentaskspal.tasks.StartData;
+import org.dmfs.opentaskspal.tasks.TimeZoneData;
+import org.dmfs.opentaskspal.tasks.TitleData;
 import org.dmfs.rfc5545.Duration;
 import org.dmfs.tasks.contract.TaskContract;
 import org.dmfs.tasks.contract.TaskContract.Instances;
@@ -63,6 +68,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import static org.dmfs.android.contentpal.testing.ContentChangeCheck.resultsIn;
 import static org.junit.Assert.assertThat;
@@ -122,8 +128,8 @@ public class TaskProviderTest
         RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
 
         OperationsBatch batch = new MultiBatch(
-                new Put<>(taskList, new Named("list 1")),
-                new Put<>(task, new Titled("task title 1"))
+                new Put<>(taskList, new NameData("list 1")),
+                new Put<>(task, new TitleData("task title 1"))
         );
 
         assertThat(batch, resultsIn(mClient,
@@ -161,11 +167,11 @@ public class TaskProviderTest
         RowSnapshot<Tasks> task3 = new VirtualRowSnapshot<>(new ListScoped(taskList2, new TasksTable(mAuthority)));
 
         OperationsBatch batch = new MultiBatch(
-                new Put<>(taskList1, new Named("list1")),
-                new Put<>(taskList2, new Named("list2")),
-                new Put<>(task1, new Titled("task1")),
-                new Put<>(task2, new Titled("task2")),
-                new Put<>(task3, new Titled("task3"))
+                new Put<>(taskList1, new NameData("list1")),
+                new Put<>(taskList2, new NameData("list2")),
+                new Put<>(task1, new TitleData("task1")),
+                new Put<>(task2, new TitleData("task2")),
+                new Put<>(task3, new TitleData("task3"))
         );
 
         assertThat(batch, resultsIn(mClient,
@@ -227,32 +233,46 @@ public class TaskProviderTest
 
 
     @Test
-    public void testInstanceWithGivenTime()
+    public void testInsertTaskWithStartAndDue()
     {
-        long listId = createTaskList();
+        Table<TaskLists> taskListsTable = createTaskListsTable();
+        RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
+        RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
 
         long start = System.currentTimeMillis();
-        long due = System.currentTimeMillis() + 30000 / 1000 * 1000;
-        createTaskWithTime(listId, start, due);
+        long due = start + TimeUnit.DAYS.toMillis(1);
+        TimeZone timeZone = TimeZone.getDefault();
 
-        // Check if a corresponding Instance exists
-        String[] projection = { Instances.INSTANCE_START, Instances.INSTANCE_DUE, Instances.INSTANCE_DURATION };
-        Cursor cursor = mResolver.query(Instances.getContentUri(mAuthority), projection, null, null, null);
-        try
-        {
-            // there can be only one
-            Assert.assertEquals(1, cursor.getCount());
+        OperationsBatch batch = new MultiBatch(
+                new Put<>(taskList, new EmptyRowData<TaskLists>()),
+                new Put<>(task,
+                        new Composite<>(
+                                new StartData(start),
+                                new DueData(due),
+                                new TimeZoneData(timeZone)
+                        ))
+        );
 
-            // Compare timestamps
-            cursor.moveToNext();
-            Assert.assertEquals(start, cursor.getLong(0));
-            Assert.assertEquals(due, cursor.getLong(1));
-            Assert.assertEquals((due - start), cursor.getLong(2));
-        }
-        finally
-        {
-            cursor.close();
-        }
+        assertThat(batch, resultsIn(mClient,
+
+                new RowInserted(new TasksTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Tasks.DTSTART, start),
+                                new EqArg(Tasks.DUE, due),
+                                new EqArg(Tasks.TZ, timeZone.getID())
+                                // TODO This is not added, should it be?
+                                // new EqArg(Tasks.DURATION, due - start)
+                        )
+                ),
+
+                new RowInserted(new InstanceTable(mAuthority),
+                        new AllOf(
+                                new EqArg(Instances.INSTANCE_START, start),
+                                new EqArg(Instances.INSTANCE_DUE, due),
+                                new EqArg(Instances.INSTANCE_DURATION, due - start)
+                        )
+                )
+        ));
     }
 
 

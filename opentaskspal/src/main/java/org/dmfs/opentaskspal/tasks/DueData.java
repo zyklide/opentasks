@@ -23,14 +23,17 @@ import org.dmfs.android.contentpal.RowData;
 import org.dmfs.tasks.contract.TaskContract;
 
 
-public final class Titled implements RowData<TaskContract.Tasks>
+/**
+ * @author Gabor Keszthelyi
+ */
+public final class DueData implements RowData<TaskContract.Tasks>
 {
-    private final CharSequence mTitle;
+    private final long mDueTimeStamp;
 
 
-    public Titled(@NonNull CharSequence title)
+    public DueData(long dueTimeStamp)
     {
-        mTitle = title;
+        mDueTimeStamp = dueTimeStamp;
     }
 
 
@@ -38,6 +41,6 @@ public final class Titled implements RowData<TaskContract.Tasks>
     @Override
     public ContentProviderOperation.Builder updatedBuilder(@NonNull ContentProviderOperation.Builder builder)
     {
-        return builder.withValue(TaskContract.Tasks.TITLE, mTitle.toString());
+        return builder.withValue(TaskContract.Tasks.DUE, mDueTimeStamp);
     }
 }
