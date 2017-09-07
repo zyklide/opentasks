@@ -27,8 +27,7 @@ import android.net.Uri;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import org.dmfs.android.contentpal.OperationsQueue;
-import org.dmfs.android.contentpal.Predicate;
+import org.dmfs.android.contentpal.OperationsBatch;
 import org.dmfs.android.contentpal.RowSnapshot;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.batches.MultiBatch;
@@ -36,9 +35,6 @@ import org.dmfs.android.contentpal.operations.Put;
 import org.dmfs.android.contentpal.predicates.AllOf;
 import org.dmfs.android.contentpal.predicates.EqArg;
 import org.dmfs.android.contentpal.predicates.IdEq;
-import org.dmfs.android.contentpal.queues.BasicOperationsQueue;
-import org.dmfs.android.contentpal.rowsets.AllRows;
-import org.dmfs.android.contentpal.rowsets.QueryRowSet;
 import org.dmfs.android.contentpal.rowsnapshots.VirtualRowSnapshot;
 import org.dmfs.android.contentpal.tables.AccountScoped;
 import org.dmfs.android.contentpal.tables.BaseTable;
@@ -56,8 +52,6 @@ import org.dmfs.tasks.contract.TaskContract;
 import org.dmfs.tasks.contract.TaskContract.Instances;
 import org.dmfs.tasks.contract.TaskContract.TaskLists;
 import org.dmfs.tasks.contract.TaskContract.Tasks;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.collection.IsIterableWithSize;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,6 +65,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static org.dmfs.android.contentpal.testing.ContentChangeCheck.resultsIn;
+import static org.junit.Assert.assertThat;
 
 
 /**
@@ -115,7 +110,7 @@ public class TaskProviderTest
 
 
     @Test
-    public void testSingleInsert00() throws Exception
+    public void testSingleInsert() throws Exception
     {
         ContentProviderClient client = mContext.getContentResolver().acquireContentProviderClient(mAuthority);
 
@@ -123,12 +118,12 @@ public class TaskProviderTest
         RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
         RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
 
-        MultiBatch batch = new MultiBatch(
+        OperationsBatch batch = new MultiBatch(
                 new Put<>(taskList, new Named("list 1")),
                 new Put<>(task, new Titled("task title 1"))
         );
 
-        Assert.assertThat(batch, resultsIn(client,
+        assertThat(batch, resultsIn(client,
 
                 new RowInserted(new TaskListsTable(mAuthority),
                         new AllOf(
@@ -139,61 +134,13 @@ public class TaskProviderTest
 
                 new RowInserted(new TasksTable(mAuthority), Tasks.TITLE, "task title 1"),
 
-                new RowExistsAfter(new BaseTable<>(Instances.getContentUri(mAuthority)),
-                        new IdEq<>(TaskContract.InstanceColumns.TASK_ID,
-                                // TODO This has to be lazy or use the virtual snapshot somehow
-                                new SingletonRow<>(client, new TasksTable(mAuthority), Tasks.TITLE, "task title 1").get(),
+                new RowExistsAfter(
+                        new BaseTable<>(Instances.getContentUri(mAuthority)),
+                        new IdEq<>(
+                                TaskContract.InstanceColumns.TASK_ID,
+                                new SingletonRow<>(client, new TasksTable(mAuthority), Tasks.TITLE, "task title 1"),
                                 Tasks._ID))
         ));
-
-        // TODO Check if it was added to Instances table? Is that white or black box?
-        // TODO Related row check for the Instance table, same task id added, how to do that
-    }
-
-
-    @Test
-    public void testSingleInsert() throws Exception
-    {
-        ContentProviderClient client = mResolver.acquireContentProviderClient(mAuthority);
-        OperationsQueue operationsQueue = new BasicOperationsQueue(client);
-
-        Table<TaskLists> taskListsTable = new Synced<>(new AccountScoped<>(new Account(ACC_NAME, ACC_TYPE), new TaskListsTable(mAuthority)));
-        RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
-        Table<TaskContract.Tasks> taskTable = new ListScoped(taskList, new TasksTable(mAuthority));
-        RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(taskTable);
-
-        operationsQueue.enqueue(new MultiBatch(
-                new Put<>(taskList, new Named("list 1")),
-                new Put<>(task, new Titled("task title 1"))
-        ));
-
-        operationsQueue.flush();
-        client.release();
-
-        // Verification:
-
-        // TODO improve verification, hamcrest iterable contains (num of elements), toString()s, Integer.valueOf(), etc
-        // TODO ClosableIterator-s here, close them
-
-        assertQuery(client, new TaskListsTable(mAuthority), new EqArg(TaskLists.LIST_NAME, "list 1"));
-
-        assertQuery(client, new TasksTable(mAuthority), new EqArg(Tasks.TITLE, "task title 1"));
-
-        Table<Tasks> verifyTasksTable = new TasksTable(mAuthority);
-        RowSnapshot<Tasks> verifyTask = new AllRows<>(verifyTasksTable.view(client)).iterator().next();
-        Assert.assertThat(verifyTask.values().charData(Tasks.TITLE).value().toString(), CoreMatchers.is("task title 1"));
-        Integer verifyTaskId = Integer.valueOf(verifyTask.values().charData(Tasks._ID).value().toString());
-
-        Table<Instances> verifyInstanceTable = new BaseTable<>(Instances.getContentUri(mAuthority));
-        RowSnapshot<Instances> verifyInstanceRow = new AllRows<>(verifyInstanceTable.view(client)).iterator().next();
-        Assert.assertThat(verifyInstanceRow.values().charData(TaskContract.InstanceColumns.TASK_ID).value().toString(),
-                CoreMatchers.is(verifyTaskId.toString()));
-    }
-
-
-    private <T> void assertQuery(ContentProviderClient client, Table<T> table, Predicate predicate)
-    {
-        Assert.assertThat(new QueryRowSet<>(table.view(client), predicate), IsIterableWithSize.<RowSnapshot<T>>iterableWithSize(1));
     }
 
 

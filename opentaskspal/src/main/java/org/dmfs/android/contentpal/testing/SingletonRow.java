@@ -23,6 +23,7 @@ import org.dmfs.android.contentpal.RowSnapshot;
 import org.dmfs.android.contentpal.Table;
 import org.dmfs.android.contentpal.predicates.EqArg;
 import org.dmfs.android.contentpal.rowsets.QueryRowSet;
+import org.dmfs.android.contentpal.rowsnapshots.LazyRowSnapshot;
 import org.dmfs.android.contentpal.tools.ClosableIterator;
 import org.dmfs.jems.OnDemand;
 
@@ -32,18 +33,43 @@ import java.io.IOException;
 /**
  * @author Gabor Keszthelyi
  */
-public final class SingletonRow<T> implements OnDemand<RowSnapshot<T>>
+public final class SingletonRow<T> extends LazyRowSnapshot<T>
 {
-    private final ContentProviderClient mClient;
-    private final Table<T> mTable;
-    private final Predicate mPredicate;
 
-
-    public SingletonRow(ContentProviderClient client, Table<T> table, Predicate predicate)
+    public SingletonRow(final ContentProviderClient client, final Table<T> table, final Predicate predicate)
     {
-        mClient = client;
-        mTable = table;
-        mPredicate = predicate;
+        super(new OnDemand<RowSnapshot<T>>()
+        {
+            @Override
+            public RowSnapshot<T> get()
+            {
+                ClosableIterator<RowSnapshot<T>> rowSetIterator = new QueryRowSet<>(table.view(client), predicate).iterator();
+
+                if (!rowSetIterator.hasNext())
+                {
+                    throw new RuntimeException(
+                            String.format("No matching row found in table %s for predicate %s", table, new PredicateDescription(predicate)));
+                }
+
+                RowSnapshot<T> rowSnapshot = rowSetIterator.next();
+                if (rowSetIterator.hasNext())
+                {
+                    throw new RuntimeException(
+                            String.format("More than one row found in table %s for predicate %s", table, new PredicateDescription(predicate)));
+                }
+
+                try
+                {
+                    rowSetIterator.close();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Couldn't close RowSet iterator", e);
+                }
+
+                return rowSnapshot;
+            }
+        });
     }
 
 
@@ -52,32 +78,4 @@ public final class SingletonRow<T> implements OnDemand<RowSnapshot<T>>
         this(client, table, new EqArg(column, value));
     }
 
-
-    @Override
-    public RowSnapshot<T> get()
-    {
-        ClosableIterator<RowSnapshot<T>> rowSetIterator = new QueryRowSet<>(mTable.view(mClient), mPredicate).iterator();
-
-        if (!rowSetIterator.hasNext())
-        {
-            throw new RuntimeException(String.format("No matching row found in table %s for predicate %s", mTable, new PredicateDescription(mPredicate)));
-        }
-
-        RowSnapshot<T> rowSnapshot = rowSetIterator.next();
-        if (rowSetIterator.hasNext())
-        {
-            throw new RuntimeException(String.format("More than one row found in table %s for predicate %s", mTable, new PredicateDescription(mPredicate)));
-        }
-
-        try
-        {
-            rowSetIterator.close();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Couldn't close RowSet iterator", e);
-        }
-
-        return rowSnapshot;
-    }
 }

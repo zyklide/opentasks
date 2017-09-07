@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package org.dmfs.android.contentpal.predicates;
-
-import org.dmfs.android.contentpal.Predicate;
-import org.dmfs.android.contentpal.RowSnapshot;
-import org.dmfs.jems.OnDemand;
-
+package org.dmfs.jems;
 
 /**
  * @author Gabor Keszthelyi
  */
-public final class IdEq<PrimaryTable> extends LazyPredicate
+public final class Cached<T> implements OnDemand<T>
 {
-    public IdEq(final String foreignIdColumnName, final RowSnapshot<PrimaryTable> primaryRow, final String primaryIdColumnName)
+    private final OnDemand<T> mDelegate;
+
+    private T mCachedValue;
+
+
+    public Cached(OnDemand<T> delegate)
     {
-        super(new OnDemand<Predicate>()
+        mDelegate = delegate;
+    }
+
+
+    @Override
+    public T get()
+    {
+        if (mCachedValue == null)
         {
-            @Override
-            public Predicate get()
-            {
-                return new EqArg(foreignIdColumnName, primaryRow.values().charData(primaryIdColumnName).value("-1"));
-            }
-        });
+            mCachedValue = mDelegate.get();
+        }
+        return mCachedValue;
     }
 }
