@@ -13,6 +13,8 @@ android {
 dependencies {
     compile project(':opentasks-contract')
     compile 'com.github.dmfs.contentpal:contentpal:1a6c4be4e3'
+//    compile 'com.github.dmfs.contentpal:contentpal:adc22a53df'
+
 
     // TODO Remove once contentpal testing module is created and files moved there
     compile 'org.hamcrest:hamcrest-library:1.3'

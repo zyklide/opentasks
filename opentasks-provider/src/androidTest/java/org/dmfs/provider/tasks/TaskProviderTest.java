@@ -27,6 +27,7 @@ import android.net.Uri;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
+import org.dmfs.android.contentpal.Operation;
 import org.dmfs.android.contentpal.OperationsBatch;
 import org.dmfs.android.contentpal.OperationsQueue;
 import org.dmfs.android.contentpal.RowSnapshot;
@@ -44,9 +45,14 @@ import org.dmfs.android.contentpal.rowsnapshots.VirtualRowSnapshot;
 import org.dmfs.android.contentpal.tables.AccountScoped;
 import org.dmfs.android.contentpal.tables.BaseTable;
 import org.dmfs.android.contentpal.tables.Synced;
+import org.dmfs.android.contentpal.testing.Assert;
+import org.dmfs.android.contentpal.testing.AssertChangeCheck;
+import org.dmfs.android.contentpal.testing.Related;
+import org.dmfs.android.contentpal.testing.SimpleAfterAssert;
 import org.dmfs.android.contentpal.testing.changechecks.RowExistsAfter;
 import org.dmfs.android.contentpal.testing.changechecks.RowInserted;
 import org.dmfs.android.contentpal.testing.changechecks.RowUpdated;
+import org.dmfs.android.contentpal.testing.checks.AssertingChangeCheck;
 import org.dmfs.android.contentpal.testing.utils.SingletonRow;
 import org.dmfs.opentaskspal.predicates.ListIdEq;
 import org.dmfs.opentaskspal.tables.InstanceTable;
@@ -65,7 +71,6 @@ import org.dmfs.tasks.contract.TaskContract.Instances;
 import org.dmfs.tasks.contract.TaskContract.TaskLists;
 import org.dmfs.tasks.contract.TaskContract.Tasks;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,6 +127,46 @@ public class TaskProviderTest
         mResolver.delete(createSyncQuery(TaskLists.getContentUri(mAuthority).buildUpon(), true), null, null);
 
         mClient.release();
+    }
+
+
+    @Test
+    public void testSingleInsert_assert() throws Exception
+    {
+        Table<TaskLists> taskListsTable = createTaskListsTable();
+        RowSnapshot<TaskLists> taskList = new VirtualRowSnapshot<>(taskListsTable);
+        final RowSnapshot<Tasks> task = new VirtualRowSnapshot<>(new ListScoped(taskList, new TasksTable(mAuthority)));
+
+        OperationsBatch batch = new MultiBatch(
+                new Put<>(taskList, new NameData("list 1")),
+                new Put<>(task, new TitleData("task title 1"))
+        );
+
+        assertThat(batch, AssertingChangeCheck.resultsIn(mClient,
+
+                new SimpleAfterAssert<>(TaskContract.Tasks.getContentUri(mAuthority), new TitleData("task title 1")),
+
+                new AssertChangeCheck()
+                {
+                    @Override
+                    public Operation beforeAssertOperation()
+                    {
+                        return null;
+                    }
+
+
+                    @Override
+                    public Operation afterAssertOperation()
+                    {
+                        return new Related<>(task, Instances.TASK_ID, new Assert(
+                                TaskContract.Instances.getContentUri(mAuthority), EmptyRowData.instance()
+
+                        ));
+                    }
+                }
+
+        ));
+
     }
 
 
@@ -477,14 +522,14 @@ public class TaskProviderTest
 
     private void checkExceptions(Cursor cursor, String originalSyncId, Long originalId)
     {
-        Assert.assertEquals(1, cursor.getCount());
+        org.junit.Assert.assertEquals(1, cursor.getCount());
         try
         {
             cursor.moveToNext();
             String _syncId = cursor.getString(0);
             Long _id = cursor.getLong(1);
-            Assert.assertEquals(originalSyncId, _syncId);
-            Assert.assertEquals(originalId, _id);
+            org.junit.Assert.assertEquals(originalSyncId, _syncId);
+            org.junit.Assert.assertEquals(originalId, _id);
         }
         finally
         {
@@ -585,7 +630,7 @@ public class TaskProviderTest
         Cursor cursor = mResolver.query(uri, null, null, null, null);
         try
         {
-            Assert.assertEquals(count, cursor.getCount());
+            org.junit.Assert.assertEquals(count, cursor.getCount());
         }
         finally
         {
