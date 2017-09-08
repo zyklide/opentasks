@@ -379,13 +379,11 @@ public class TaskProviderTest
                         new AllOf(
                                 new EqArg(Tasks.DTSTART, start),
                                 new EqArg(Tasks.DUE, due),
-                                new EqArg(Tasks.TZ, timeZone.getID())
-                        ),
+                                new EqArg(Tasks.TZ, timeZone.getID())),
                         new AllOf(
                                 new EqArg(Tasks.DTSTART, start),
                                 new EqArg(Tasks.DUE, due2),
-                                new EqArg(Tasks.TZ, timeZone.getID())
-                        )
+                                new EqArg(Tasks.TZ, timeZone.getID()))
                 ),
 
                 new RowUpdated(new InstanceTable(mAuthority),
@@ -398,8 +396,7 @@ public class TaskProviderTest
                                 new EqArg(Instances.INSTANCE_START, start),
                                 new EqArg(Instances.INSTANCE_DUE, due2),
                                 new EqArg(Instances.INSTANCE_DURATION, due2 - start),
-                                new EqArg(Tasks.TZ, timeZone.getID())
-                        )
+                                new EqArg(Tasks.TZ, timeZone.getID()))
                 )
         ));
     }
